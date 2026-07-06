@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Ishana's Birthday"
+version = "1.0.0"
+id = "artifacts/ishana-birthday"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22475
+
+[services.development]
+run = "pnpm --filter @workspace/ishana-birthday run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ishana-birthday", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/ishana-birthday/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22475"
+BASE_PATH = "/"
