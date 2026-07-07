@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { playHappyBirthday } from '../utils/audio';
+import teddyImg     from '@assets/Picsart_26-07-07_15-55-29-775_1783420402309.png';
+import butterflyImg from '@assets/Picsart_26-07-07_15-55-47-094_1783420418557.png';
 
 /* ─── Types ─────────────────────────────────────────────────── */
 type CakeChoice = {
@@ -327,6 +329,132 @@ function Equalizer() {
   );
 }
 
+/* ─── Trail particle config ─────────────────────────────────── */
+const TRAIL_PARTICLES = Array.from({ length: 14 }, (_, i) => ({
+  // Particles scattered behind the butterfly along the entry x-axis
+  // offX: negative = to the left of butterfly center (its wake)
+  offX: -(30 + i * 42),
+  offY: ((i % 4) - 1.5) * 14,
+  size: 5 + (i % 3) * 4,
+  color: ['#ffb6d9', '#e8b4ff', '#ffffff', '#ffd6e8', '#c8a8ff'][i % 5],
+  delay: 0.05 + i * 0.09, // stagger so each appears as butterfly passes it
+}));
+
+/* ─── ButterflyTopper ───────────────────────────────────────── */
+function ButterflyTopper({ blownOut }: { blownOut: boolean }) {
+  return (
+    // Outer: handles the lateral entry swoop from the left
+    <motion.div
+      initial={{ x: -820 }}
+      animate={{ x: 0 }}
+      transition={{ duration: 1.7, ease: [0.2, 0.6, 0.35, 1.0] }}
+      style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
+      {/* Sparkle trail — children positioned relative to butterfly,
+          appear in the wake as the container sweeps rightward */}
+      {TRAIL_PARTICLES.map((p, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, scale: 0 }}
+          animate={{ opacity: [0, 1, 0.8, 0], scale: [0, 1, 0.9, 0] }}
+          transition={{ delay: p.delay, duration: 0.55, ease: 'easeOut' }}
+          style={{
+            position: 'absolute',
+            left: `calc(50% + ${p.offX}px)`,
+            top:  `calc(50% + ${p.offY}px)`,
+            width: p.size, height: p.size,
+            borderRadius: '50%',
+            background: p.color,
+            boxShadow: `0 0 ${p.size * 2}px ${p.color}`,
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      {/* Butterfly image wrapper: handles continuous y-bob after landing */}
+      <motion.div
+        animate={blownOut ? {} : { y: [0, -8, -10, -6, 0] }}
+        transition={{ duration: 1.9, repeat: Infinity, ease: 'easeInOut', delay: 1.7 }}
+        style={{ position: 'relative', marginBottom: 6 }}
+      >
+        {/* The img itself carries the rapid wing-flap via CSS animation */}
+        <img
+          src={butterflyImg}
+          alt="butterfly"
+          style={{
+            width: 88, height: 88,
+            objectFit: 'contain',
+            animation: 'wingFlap 0.36s ease-in-out infinite',
+            transformOrigin: 'center center',
+            filter: 'drop-shadow(0 4px 12px rgba(220,80,180,0.5))',
+            mixBlendMode: 'screen',       // removes black background safely
+          }}
+        />
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ─── TeddyTopper ────────────────────────────────────────────── */
+function TeddyTopper({ blownOut }: { blownOut: boolean }) {
+  const controls = useAnimation();
+
+  useEffect(() => {
+    async function runEntry() {
+      // 1. Drop in fast from above
+      await controls.start({
+        y: 0, scaleX: 1, scaleY: 1,
+        transition: { y: { type: 'tween', duration: 0.5, ease: [0.55, 0, 1, 1] } },
+      });
+      // 2. Squash on impact — flatten down, spread wide
+      await controls.start({
+        scaleX: 1.38, scaleY: 0.62,
+        transition: { duration: 0.10, ease: 'easeOut' },
+      });
+      // 3. Overshoot stretch upward
+      await controls.start({
+        scaleX: 0.88, scaleY: 1.18,
+        transition: { duration: 0.14, ease: 'easeOut' },
+      });
+      // 4. Settle back to normal with a soft spring
+      controls.start({
+        scaleX: 1, scaleY: 1,
+        transition: { type: 'spring', stiffness: 260, damping: 16 },
+      });
+    }
+    runEntry();
+  }, [controls]);
+
+  return (
+    <motion.div
+      initial={{ y: -520, scaleX: 1, scaleY: 1 }}
+      animate={controls}
+      style={{
+        transformOrigin: 'bottom center',
+        marginBottom: 4,
+        position: 'relative',
+      }}
+    >
+      {/* Gentle idle float after landing */}
+      <motion.div
+        animate={blownOut ? {} : { y: [0, -4, 0] }}
+        transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut', delay: 1.0 }}
+      >
+        <img
+          src={teddyImg}
+          alt="teddy"
+          style={{
+            width: 90, height: 90,
+            objectFit: 'contain',
+            filter: 'drop-shadow(0 6px 14px rgba(160,80,120,0.45))',
+            mixBlendMode: 'screen',
+          }}
+        />
+      </motion.div>
+    </motion.div>
+  );
+}
+
 /* ─── Main scene ────────────────────────────────────────────── */
 export default function Scene2CakeBuilder({
   onComplete,
@@ -491,34 +619,26 @@ export default function Scene2CakeBuilder({
 
           {/* Candle + topper — positioned above cake stack */}
           {cake.topper && (
-            <motion.div
-              initial={{ y: -500, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ ...DROP, delay: 0 }}
+            <div
               style={{
                 position: 'absolute',
-                bottom: 14 + cakeStackH, // sit right on top of cake
+                bottom: 14 + cakeStackH,
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 30,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                overflow: 'visible',
               }}
             >
-              {/* Topper emoji floats above candle */}
-              <motion.span
-                animate={blownOut ? {} : {
-                  y: [0, -5, 0],
-                  rotate: cake.topper === 'butterfly' ? [-6, 6, -6] : [0, 0, 0],
-                }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-                style={{ fontSize: 36, lineHeight: 1, marginBottom: 4, filter: 'drop-shadow(0 2px 6px rgba(100,0,200,0.3))' }}
-              >
-                {cake.topper === 'butterfly' ? '🦋' : '🧸'}
-              </motion.span>
+              {/* Image topper — butterfly flies in from side; teddy drops with squash */}
+              {cake.topper === 'butterfly'
+                ? <ButterflyTopper blownOut={blownOut} />
+                : <TeddyTopper    blownOut={blownOut} />
+              }
               <Candle blownOut={blownOut} />
-            </motion.div>
+            </div>
           )}
 
           {/* ── Cake layers + frosting stacked column ── */}
