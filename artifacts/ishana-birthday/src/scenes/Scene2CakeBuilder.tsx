@@ -377,16 +377,17 @@ function ButterflyTopper() {
         />
       ))}
 
-      {/* Butterfly — wing flap CSS stops the instant it lands; no bob after landing */}
+      {/* Butterfly — on landing: animation removed so wings snap back to natural
+          open/spread state (identity transform). objectPosition bottom aligns the
+          butterfly body flush against the frosting surface (0 px gap). */}
       <img
         src={butterflyImg}
         alt="butterfly"
         style={{
           width: 82, height: 82,
           objectFit: 'contain',
-          // animationPlayState keeps the keyframe paused without a re-render flash
-          animation: 'wingFlap 0.36s ease-in-out infinite',
-          animationPlayState: landed ? 'paused' : 'running',
+          objectPosition: 'bottom center',   // body at bottom of img box → 0 px gap to frosting
+          animation: landed ? 'none' : 'wingFlap 0.36s ease-in-out infinite',
           transformOrigin: 'center center',
           filter: 'drop-shadow(0 4px 12px rgba(220,80,180,0.5))',
           mixBlendMode: 'screen',
@@ -442,6 +443,7 @@ function TeddyTopper() {
         style={{
           width: 90, height: 90,
           objectFit: 'contain',
+          objectPosition: 'bottom center',   // feet at bottom of img box → 0 px gap to frosting
           filter: 'drop-shadow(0 6px 14px rgba(160,80,120,0.45))',
           mixBlendMode: 'screen',
           display: 'block',
