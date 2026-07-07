@@ -330,34 +330,39 @@ function Equalizer() {
 }
 
 /* ─── Trail particle config ─────────────────────────────────── */
-const TRAIL_PARTICLES = Array.from({ length: 14 }, (_, i) => ({
-  // Particles scattered behind the butterfly along the entry x-axis
-  // offX: negative = to the left of butterfly center (its wake)
-  offX: -(30 + i * 42),
-  offY: ((i % 4) - 1.5) * 14,
-  size: 5 + (i % 3) * 4,
-  color: ['#ffb6d9', '#e8b4ff', '#ffffff', '#ffd6e8', '#c8a8ff'][i % 5],
-  delay: 0.05 + i * 0.09, // stagger so each appears as butterfly passes it
+// 16 particles spread across the full 1.7 s flight — each blooms and fades
+// as the butterfly sweeps past its position. offX is relative to the
+// butterfly's current location (negative = behind = to the left while flying rightward).
+const TRAIL_PARTICLES = Array.from({ length: 16 }, (_, i) => ({
+  offX: -(12 + i * 16),          // spread 12–268 px behind butterfly
+  offY: ((i % 6) - 2.5) * 9,    // gentle vertical scatter
+  size: 4 + (i % 3) * 3,        // 4 / 7 / 10 px
+  color: ['#ffb6d9', '#e8b4ff', '#ffffff', '#ffd6e8', '#c8a8ff', '#f9c8ff'][i % 6],
+  delay: i * 0.095,              // stagger 0 → ~1.5 s
+  duration: 0.55,                // each particle lives 0.55 s
 }));
 
 /* ─── ButterflyTopper ───────────────────────────────────────── */
-function ButterflyTopper({ blownOut }: { blownOut: boolean }) {
+function ButterflyTopper() {
+  const [landed, setLanded] = useState(false);
+
   return (
-    // Outer: handles the lateral entry swoop from the left
+    // Outer: sweeps in from far left; onAnimationComplete freezes everything
     <motion.div
-      initial={{ x: -820 }}
+      initial={{ x: -960 }}
       animate={{ x: 0 }}
       transition={{ duration: 1.7, ease: [0.2, 0.6, 0.35, 1.0] }}
-      style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onAnimationComplete={() => setLanded(true)}
+      style={{ position: 'relative', display: 'inline-flex', alignItems: 'flex-end' }}
     >
-      {/* Sparkle trail — children positioned relative to butterfly,
-          appear in the wake as the container sweeps rightward */}
-      {TRAIL_PARTICLES.map((p, i) => (
+      {/* Sparkle trail — each particle blooms and fades as butterfly flies over it.
+          Conditionally rendered: removed the moment butterfly lands so they can't linger. */}
+      {!landed && TRAIL_PARTICLES.map((p, i) => (
         <motion.div
           key={i}
           initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: [0, 1, 0.8, 0], scale: [0, 1, 0.9, 0] }}
-          transition={{ delay: p.delay, duration: 0.55, ease: 'easeOut' }}
+          animate={{ opacity: [0, 0.95, 0.7, 0], scale: [0, 1, 0.85, 0] }}
+          transition={{ delay: p.delay, duration: p.duration, ease: 'easeOut' }}
           style={{
             position: 'absolute',
             left: `calc(50% + ${p.offX}px)`,
@@ -367,36 +372,32 @@ function ButterflyTopper({ blownOut }: { blownOut: boolean }) {
             background: p.color,
             boxShadow: `0 0 ${p.size * 2}px ${p.color}`,
             pointerEvents: 'none',
+            transform: 'translate(-50%, -50%)',
           }}
         />
       ))}
 
-      {/* Butterfly image wrapper: handles continuous y-bob after landing */}
-      <motion.div
-        animate={blownOut ? {} : { y: [0, -8, -10, -6, 0] }}
-        transition={{ duration: 1.9, repeat: Infinity, ease: 'easeInOut', delay: 1.7 }}
-        style={{ position: 'relative', marginBottom: 6 }}
-      >
-        {/* The img itself carries the rapid wing-flap via CSS animation */}
-        <img
-          src={butterflyImg}
-          alt="butterfly"
-          style={{
-            width: 88, height: 88,
-            objectFit: 'contain',
-            animation: 'wingFlap 0.36s ease-in-out infinite',
-            transformOrigin: 'center center',
-            filter: 'drop-shadow(0 4px 12px rgba(220,80,180,0.5))',
-            mixBlendMode: 'screen',       // removes black background safely
-          }}
-        />
-      </motion.div>
+      {/* Butterfly — wing flap CSS stops the instant it lands; no bob after landing */}
+      <img
+        src={butterflyImg}
+        alt="butterfly"
+        style={{
+          width: 82, height: 82,
+          objectFit: 'contain',
+          // animationPlayState keeps the keyframe paused without a re-render flash
+          animation: 'wingFlap 0.36s ease-in-out infinite',
+          animationPlayState: landed ? 'paused' : 'running',
+          transformOrigin: 'center center',
+          filter: 'drop-shadow(0 4px 12px rgba(220,80,180,0.5))',
+          mixBlendMode: 'screen',
+        }}
+      />
     </motion.div>
   );
 }
 
 /* ─── TeddyTopper ────────────────────────────────────────────── */
-function TeddyTopper({ blownOut }: { blownOut: boolean }) {
+function TeddyTopper() {
   const controls = useAnimation();
 
   useEffect(() => {
@@ -416,7 +417,7 @@ function TeddyTopper({ blownOut }: { blownOut: boolean }) {
         scaleX: 0.88, scaleY: 1.18,
         transition: { duration: 0.14, ease: 'easeOut' },
       });
-      // 4. Settle back to normal with a soft spring
+      // 4. Settle back — stays put on the cake, no idle float
       controls.start({
         scaleX: 1, scaleY: 1,
         transition: { type: 'spring', stiffness: 260, damping: 16 },
@@ -426,31 +427,26 @@ function TeddyTopper({ blownOut }: { blownOut: boolean }) {
   }, [controls]);
 
   return (
+    // marginBottom: 0 ensures teddy bottom is flush with the frosting surface (no gap)
     <motion.div
       initial={{ y: -520, scaleX: 1, scaleY: 1 }}
       animate={controls}
       style={{
         transformOrigin: 'bottom center',
-        marginBottom: 4,
         position: 'relative',
       }}
     >
-      {/* Gentle idle float after landing */}
-      <motion.div
-        animate={blownOut ? {} : { y: [0, -4, 0] }}
-        transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut', delay: 1.0 }}
-      >
-        <img
-          src={teddyImg}
-          alt="teddy"
-          style={{
-            width: 90, height: 90,
-            objectFit: 'contain',
-            filter: 'drop-shadow(0 6px 14px rgba(160,80,120,0.45))',
-            mixBlendMode: 'screen',
-          }}
-        />
-      </motion.div>
+      <img
+        src={teddyImg}
+        alt="teddy"
+        style={{
+          width: 90, height: 90,
+          objectFit: 'contain',
+          filter: 'drop-shadow(0 6px 14px rgba(160,80,120,0.45))',
+          mixBlendMode: 'screen',
+          display: 'block',
+        }}
+      />
     </motion.div>
   );
 }
@@ -617,28 +613,59 @@ export default function Scene2CakeBuilder({
             zIndex: 1,
           }} />
 
-          {/* Candle + topper — positioned above cake stack */}
+          {/* ── Candle + topper — two layouts depending on topper choice ── */}
           {cake.topper && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 14 + cakeStackH,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 30,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                overflow: 'visible',
-              }}
-            >
-              {/* Image topper — butterfly flies in from side; teddy drops with squash */}
-              {cake.topper === 'butterfly'
-                ? <ButterflyTopper blownOut={blownOut} />
-                : <TeddyTopper    blownOut={blownOut} />
-              }
-              <Candle blownOut={blownOut} />
-            </div>
+            <>
+              {cake.topper === 'butterfly' ? (
+                <>
+                  {/* Candle: stays centred above the cake */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 14 + cakeStackH,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 30,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    overflow: 'visible',
+                  }}>
+                    <Candle blownOut={blownOut} />
+                  </div>
+
+                  {/* Butterfly: flies in from the left, lands at the
+                      top-left corner of the frosting and freezes there */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 14 + cakeStackH,  // bottom of img = frosting surface, no gap
+                    left: 2,                  // left corner of frosting (frosting starts at ~10px)
+                    zIndex: 31,
+                    overflow: 'visible',
+                  }}>
+                    <ButterflyTopper />
+                  </div>
+                </>
+              ) : (
+                /* Teddy: flex-row with the candle, both bottom-flush on frosting.
+                   Row is shifted left of the cake centre so candle stays roughly
+                   centred and teddy sits to its right. */
+                <div style={{
+                  position: 'absolute',
+                  bottom: 14 + cakeStackH,
+                  left: '50%',
+                  transform: 'translateX(-55%)',
+                  zIndex: 30,
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'flex-end',   // both bottoms flush with frosting surface
+                  gap: 6,
+                  overflow: 'visible',
+                }}>
+                  <Candle blownOut={blownOut} />
+                  <TeddyTopper />
+                </div>
+              )}
+            </>
           )}
 
           {/* ── Cake layers + frosting stacked column ── */}
