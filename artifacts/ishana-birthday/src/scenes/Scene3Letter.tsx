@@ -4,11 +4,21 @@ import lavenderGarden from '@assets/Lavender_aesthetic.png_2K_202607061551_17833
 
 const letterText = `Dear Ishana,
 
-Happy 15th Birthday! 🎂
+Happy birthday Ishana... 😁💕
 
-Today you turn fifteen — a magical number for a magical person. You are kind, bright, and genuinely one of a kind. May this year bring you joy, laughter, and every dream you've been quietly holding close.
+Happy birthday to the person who feels like a warm cup of tea on a rainy day.... 😁💯
 
-Here's a little adventure I made just for you. I hope it made you smile 💜
+Happy 15th birthday to my amazing sister and wonderful friend... 😁💕💕💯
+
+You are truly like a hidden pocket of sunshine, and you make life so much sweeter just by being yourself... 💕😁💞
+
+I hope your special day is completely cozy, stress-free, and filled with your absolute favorite things 😉😁
+
+Cheers to more laughs, shared secrets, and another beautiful year of being the awesome person you are... 💯😁😉💕
+
+I made this little adventure just for you 😅💕 hope this makes you smile... 😁
+
+Few things are remaining in this gift, go for it anddd try to choose option 'No' and see what happens.. 😉
 
 With love,
 Your Friend 🌸`;
