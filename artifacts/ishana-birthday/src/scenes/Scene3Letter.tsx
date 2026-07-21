@@ -21,7 +21,7 @@ I made this little adventure just for you 😅💕 hope this makes you smile... 
 Few things are remaining in this gift, go for it and try to choose option 'No' and see what happens.. 😉
 
 With love,
-Your Friend 🌸`;
+Mr Anonymous 🌸`;
 
 export default function Scene3Letter({ onComplete }: { onComplete: () => void }) {
   const [isOpen, setIsOpen] = useState(false);

@@ -5,9 +5,9 @@ import lavenderTree from '@assets/3940718421216742.png_2K_202607061551_178333360
 const paragraphs = [
   "Happy Birthday, Ishana! 🎂",
   "Fifteen looks absolutely beautiful on you.",
-  "May your year be filled with laughter, adventures, and all the purple things that make you smile ✨",
-  "You deserve every wonderful thing this world has to offer.",
-  "Stay magical. 💜"
+  "I wish you a year filled with laughter, adventures, and all the things that makes you 'Smile' 😁✨💕",
+  "You deserve every wonderful thing this world has to offer. 🌸💯🎀",
+  "Stay Awesome. 💜😎🌟"
 ];
 
 export default function Scene5Final({ onRestart }: { onRestart: () => void }) {
